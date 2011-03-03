@@ -1,0 +1,32 @@
+The instructions for building LAME on Android.
+
+- Referred to the http://blog.libertadtech.com/2011/02/porting-lame-encoder-to-android-arm.html
+
+1. Download LAME sources, extract, copy all sources from directory libmp3lame to
+   jni/lame-3.98.4_libmp3lame directory. Also copy lame.h which is located in
+   include directory of LAME sources to jni/lame-3.98.4_libmp3lame.
+
+2. Create jni/Android.mk file. it should look like this:
+
+===
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+
+LAME_LIBMP3_DIR := lame-3.98.4_libmp3lame
+
+LOCAL_MODULE    := mp3lame
+LOCAL_SRC_FILES := $(LAME_LIBMP3_DIR)/bitstream.c $(LAME_LIBMP3_DIR)/fft.c $(LAME_LIBMP3_DIR)/id3tag.c $(LAME_LIBMP3_DIR)/mpglib_interface.c $(LAME_LIBMP3_DIR)/presets.c $(LAME_LIBMP3_DIR)/quantize.c $(LAME_LIBMP3_DIR)/reservoir.c $(LAME_LIBMP3_DIR)/tables.c $(LAME_LIBMP3_DIR)/util.c $(LAME_LIBMP3_DIR)/VbrTag.c $(LAME_LIBMP3_DIR)/encoder.c $(LAME_LIBMP3_DIR)/gain_analysis.c $(LAME_LIBMP3_DIR)/lame.c $(LAME_LIBMP3_DIR)/newmdct.c $(LAME_LIBMP3_DIR)/psymodel.c $(LAME_LIBMP3_DIR)/quantize_pvt.c $(LAME_LIBMP3_DIR)/set_get.c $(LAME_LIBMP3_DIR)/takehiro.c $(LAME_LIBMP3_DIR)/vbrquantize.c $(LAME_LIBMP3_DIR)/version.c
+
+include $(BUILD_SHARED_LIBRARY)
+===
+
+3. Remove Makefile.am, Makefile.in, libmp3lame_dll_vc6.dsp, libmp3lame_vc6.dsp,
+   libmp3lame_vc8.vcproj, logoe.ico, depcomp, i386 directory and vector directory.
+
+4. Edit file jni/lame-3.98.4_libmp3lame/utils.h, and replace definition
+   "extern ieee754_float32_t fast_log2(ieee754_float32_t x);"
+   with this "extern float fast_log2(float x);".
+
+5. Go to the jni directory and run $pathtoandroidndk/ndk-build and you're done,
+   you'll have limp3lame.so compiled.
