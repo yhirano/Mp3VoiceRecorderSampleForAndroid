@@ -45,6 +45,11 @@ public class MainActivity extends Activity {
 					Toast.makeText(MainActivity.this, "ファイルが生成できませんでした",
 							Toast.LENGTH_LONG).show();
 					break;
+				case RecMicToMp3.MSG_ERROR_REC_START:
+					statusTextView.setText("");
+					Toast.makeText(MainActivity.this, "録音が開始できませんでした",
+							Toast.LENGTH_LONG).show();
+					break;
 				case RecMicToMp3.MSG_ERROR_AUDIO_RECORD:
 					statusTextView.setText("");
 					Toast.makeText(MainActivity.this, "録音ができませんでした",

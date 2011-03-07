@@ -46,6 +46,7 @@ public class RecMicToMp3 {
 	 * @see RecMicToMp3#MSG_REC_STOPPED
 	 * @see RecMicToMp3#MSG_ERROR_GET_MIN_BUFFERSIZE
 	 * @see RecMicToMp3#MSG_ERROR_CREATE_FILE
+	 * @see RecMicToMp3#MSG_ERROR_REC_START
 	 * @see RecMicToMp3#MSG_ERROR_AUDIO_RECORD
 	 * @see RecMicToMp3#MSG_ERROR_AUDIO_ENCODE
 	 * @see RecMicToMp3#MSG_ERROR_WRITE_FILE
@@ -74,24 +75,29 @@ public class RecMicToMp3 {
 	public static final int MSG_ERROR_CREATE_FILE = 3;
 
 	/**
+	 * 録音の開始に失敗した
+	 */
+	public static final int MSG_ERROR_REC_START = 4;
+	
+	/**
 	 * 録音ができない。録音中開始後のみ発行する。
 	 */
-	public static final int MSG_ERROR_AUDIO_RECORD = 4;
+	public static final int MSG_ERROR_AUDIO_RECORD = 5;
 
 	/**
 	 * エンコードに失敗した。録音中開始後のみ発行する。
 	 */
-	public static final int MSG_ERROR_AUDIO_ENCODE = 5;
+	public static final int MSG_ERROR_AUDIO_ENCODE = 6;
 
 	/**
 	 * ファイルの書き出しに失敗した。録音中開始後のみ発行する。
 	 */
-	public static final int MSG_ERROR_WRITE_FILE = 6;
+	public static final int MSG_ERROR_WRITE_FILE = 7;
 
 	/**
 	 * ファイルのクローズに失敗した。録音中開始後のみ発行する。
 	 */
-	public static final int MSG_ERROR_CLOSE_FILE = 7;
+	public static final int MSG_ERROR_CLOSE_FILE = 8;
 
 	/**
 	 * コンストラクタ
@@ -159,89 +165,99 @@ public class RecMicToMp3 {
 
 				mIsRecording = true; // 録音の開始フラグを立てる
 				try {
-					audioRecord.startRecording(); // 録音を開始する
-
-					// 録音が開始した
-					if (mHandler != null) {
-						mHandler.sendEmptyMessage(MSG_REC_STARTED);
-					}
-
-					int readSize = 0;
-					while (mIsRecording) {
-						readSize = audioRecord.read(buffer, 0, bufferSize);
-						if (readSize < 0) {
-							// 録音ができない
-							if (mHandler != null) {
-								mHandler.sendEmptyMessage(MSG_ERROR_AUDIO_RECORD);
-							}
-							break;
-						}
-						// データが読み込めなかった場合は何もしない
-						else if (readSize == 0) {
-							;
-						}
-						// データが入っている場合
-						else {
-							int encResult = SimpleLame.encode(buffer,
-									buffer, readSize, mp3buffer);
-							if (encResult < 0) {
-								// エンコードに失敗した
-								if (mHandler != null) {
-									mHandler.sendEmptyMessage(MSG_ERROR_AUDIO_ENCODE);
-								}
-								break;
-							}
-							if (encResult != 0) {
-								try {
-									output.write(mp3buffer, 0, encResult);
-								} catch (IOException e) {
-									// ファイルの書き出しに失敗した
-									if (mHandler != null) {
-										mHandler.sendEmptyMessage(MSG_ERROR_WRITE_FILE);
-									}
-									break;
-								}
-							}
-						}
-					}
-
-					int flushResult = SimpleLame.flush(mp3buffer);
-					if (flushResult < 0) {
-						// エンコードに失敗した
+					try {
+						audioRecord.startRecording(); // 録音を開始する
+					} catch (IllegalStateException e) {
+						// 録音の開始に失敗した
 						if (mHandler != null) {
-							mHandler.sendEmptyMessage(MSG_ERROR_AUDIO_ENCODE);
+							mHandler.sendEmptyMessage(MSG_ERROR_REC_START);
 						}
-					}
-					if (flushResult != 0) {
-						try {
-							output.write(mp3buffer, 0, flushResult);
-						} catch (IOException e) {
-							// ファイルの書き出しに失敗した
-							if (mHandler != null) {
-								mHandler.sendEmptyMessage(MSG_ERROR_WRITE_FILE);
-							}
-						}
+						return;
 					}
 
 					try {
-						output.close();
-					} catch (IOException e) {
-						// ファイルのクローズに失敗した
+						// 録音が開始した
 						if (mHandler != null) {
-							mHandler.sendEmptyMessage(MSG_ERROR_CLOSE_FILE);
+							mHandler.sendEmptyMessage(MSG_REC_STARTED);
 						}
-					}
-					audioRecord.stop(); // 録音を停止する
-					audioRecord.release();
 
-					SimpleLame.close();
-					
-					// 録音が終了した
-					if (mHandler != null) {
-						mHandler.sendEmptyMessage(MSG_REC_STOPPED);
+						int readSize = 0;
+						while (mIsRecording) {
+							readSize = audioRecord.read(buffer, 0, bufferSize);
+							if (readSize < 0) {
+								// 録音ができない
+								if (mHandler != null) {
+									mHandler.sendEmptyMessage(MSG_ERROR_AUDIO_RECORD);
+								}
+								break;
+							}
+							// データが読み込めなかった場合は何もしない
+							else if (readSize == 0) {
+								;
+							}
+							// データが入っている場合
+							else {
+								int encResult = SimpleLame.encode(buffer,
+										buffer, readSize, mp3buffer);
+								if (encResult < 0) {
+									// エンコードに失敗した
+									if (mHandler != null) {
+										mHandler.sendEmptyMessage(MSG_ERROR_AUDIO_ENCODE);
+									}
+									break;
+								}
+								if (encResult != 0) {
+									try {
+										output.write(mp3buffer, 0, encResult);
+									} catch (IOException e) {
+										// ファイルの書き出しに失敗した
+										if (mHandler != null) {
+											mHandler.sendEmptyMessage(MSG_ERROR_WRITE_FILE);
+										}
+										break;
+									}
+								}
+							}
+						}
+
+						int flushResult = SimpleLame.flush(mp3buffer);
+						if (flushResult < 0) {
+							// エンコードに失敗した
+							if (mHandler != null) {
+								mHandler.sendEmptyMessage(MSG_ERROR_AUDIO_ENCODE);
+							}
+						}
+						if (flushResult != 0) {
+							try {
+								output.write(mp3buffer, 0, flushResult);
+							} catch (IOException e) {
+								// ファイルの書き出しに失敗した
+								if (mHandler != null) {
+									mHandler.sendEmptyMessage(MSG_ERROR_WRITE_FILE);
+								}
+							}
+						}
+
+						try {
+							output.close();
+						} catch (IOException e) {
+							// ファイルのクローズに失敗した
+							if (mHandler != null) {
+								mHandler.sendEmptyMessage(MSG_ERROR_CLOSE_FILE);
+							}
+						}
+					} finally {
+						audioRecord.stop(); // 録音を停止する
+						audioRecord.release();
 					}
 				} finally {
+					SimpleLame.close();
 					mIsRecording = false; // 録音の開始フラグを下げる
+				}
+
+				// 録音が終了した
+				if (mHandler != null) {
+					mHandler.sendEmptyMessage(MSG_REC_STOPPED);
 				}
 			}
 		}.start();
@@ -273,6 +289,7 @@ public class RecMicToMp3 {
 	 * @see RecMicToMp3#MSG_REC_STOPPED
 	 * @see RecMicToMp3#MSG_ERROR_GET_MIN_BUFFERSIZE
 	 * @see RecMicToMp3#MSG_ERROR_CREATE_FILE
+	 * @see RecMicToMp3#MSG_ERROR_REC_START
 	 * @see RecMicToMp3#MSG_ERROR_AUDIO_RECORD
 	 * @see RecMicToMp3#MSG_ERROR_AUDIO_ENCODE
 	 * @see RecMicToMp3#MSG_ERROR_WRITE_FILE
