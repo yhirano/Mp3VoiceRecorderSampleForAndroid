@@ -1,5 +1,5 @@
 # Mp3VoiceRecorderSampleForAndroid
-The MP3 voice recorder sample for Android.
+MP3 voice recorder sample for Android.
 
 ## Usage
 * Press the "Start" button to start recording, then press the "Stop" button to stop recording.
@@ -11,8 +11,10 @@ The MP3 voice recorder sample for Android.
 * See [https://github.com/yhirano/Mp3VoiceRecorderSampleForAndroid/blob/master/jni/Note.txt](https://github.com/yhirano/Mp3VoiceRecorderSampleForAndroid/blob/master/jni/Note.txt) about the build way.
 * A voice input the microphone, and real-time MP3 encoding.
  
-## Others
-* LAME is LGPL.
+## License
+* LAME source code licensed under the LGPL.
 * The source code is free and no warranty expect LAME.
+
+## Others
 * Work Galaxy Tab and Nexus One.
 * Not work on the Android emulator.
