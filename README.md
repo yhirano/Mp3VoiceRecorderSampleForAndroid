@@ -13,7 +13,7 @@ MP3 voice recorder sample for Android.
  
 ## License
 * LAME source code licensed under the LGPL.
-* The source code is free and no warranty expect LAME.
+* The source code is free and no warranty except for LAME.
 
 ## Others
 * Work Galaxy Tab and Nexus One.
