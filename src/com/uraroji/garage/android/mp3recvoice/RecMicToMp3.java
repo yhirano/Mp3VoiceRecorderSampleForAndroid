@@ -131,22 +131,26 @@ public class RecMicToMp3 {
 			public void run() {
 				android.os.Process
 						.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-				// 確保されるバッファサイズはここで取得したサイズの2倍となるので注意（shortの2倍）
-				final int bufferSize = AudioRecord.getMinBufferSize(
+				// 最低限のバッファサイズ
+				final int minBufferSize = AudioRecord.getMinBufferSize(
 						mSampleRate, AudioFormat.CHANNEL_IN_MONO,
 						AudioFormat.ENCODING_PCM_16BIT);
 				// バッファサイズが取得できない。サンプリングレート等の設定を端末がサポートしていない可能性がある。
-				if (bufferSize < 0) {
+				if (minBufferSize < 0) {
 					if (mHandler != null) {
 						mHandler.sendEmptyMessage(MSG_ERROR_GET_MIN_BUFFERSIZE);
 					}
 					return;
 				}
+				// getMinBufferSizeで取得した値の場合
+				// "W/AudioFlinger(75): RecordThread: buffer overflow"が発生するようであるため、少し大きめの値にしている
 				AudioRecord audioRecord = new AudioRecord(
 						MediaRecorder.AudioSource.MIC, mSampleRate,
 						AudioFormat.CHANNEL_IN_MONO,
-						AudioFormat.ENCODING_PCM_16BIT, bufferSize);
-				short[] buffer = new short[bufferSize];
+						AudioFormat.ENCODING_PCM_16BIT, minBufferSize * 2);
+
+				// PCM buffer size (5sec)
+				short[] buffer = new short[mSampleRate * (16 / 8) * 1 * 5]; // SampleRate[Hz] * 16bit * Mono * 5sec
 				byte[] mp3buffer = new byte[(int) (7200 + buffer.length * 2 * 1.25)];
 
 				FileOutputStream output = null;
@@ -183,7 +187,7 @@ public class RecMicToMp3 {
 
 						int readSize = 0;
 						while (mIsRecording) {
-							readSize = audioRecord.read(buffer, 0, bufferSize);
+							readSize = audioRecord.read(buffer, 0, minBufferSize);
 							if (readSize < 0) {
 								// 録音ができない
 								if (mHandler != null) {
