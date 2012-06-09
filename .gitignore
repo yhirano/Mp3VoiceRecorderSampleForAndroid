@@ -1,3 +1,4 @@
 bin/
 obj/
+gen/
 .DS_Store
